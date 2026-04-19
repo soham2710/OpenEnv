@@ -79,7 +79,9 @@ def test_prepare_hf_deployment_stages_only_selected_env(tmp_path: Path) -> None:
     assert "ENV ENABLE_WEB_INTERFACE=true" in dockerfile_text
 
 
-def test_prepare_hf_deployment_applies_env_specific_prepare_hook(tmp_path: Path) -> None:
+def test_prepare_hf_deployment_applies_env_specific_prepare_hook(
+    tmp_path: Path,
+) -> None:
     """Environment-specific prepare hooks should own Dockerfile customization."""
     staging_dir = tmp_path / "hf-staging"
 
@@ -98,5 +100,8 @@ def test_prepare_hf_deployment_applies_env_specific_prepare_hook(tmp_path: Path)
     dockerfile_text = (staged_space / "Dockerfile").read_text()
     assert "ARG OPENSPIEL_BASE_IMAGE=" not in dockerfile_text
     assert "FROM ${OPENSPIEL_BASE_IMAGE}" not in dockerfile_text
-    assert "FROM ghcr.io/meta-pytorch/openenv-openspiel-base:sha-e622c7e" in dockerfile_text
+    assert (
+        "FROM ghcr.io/meta-pytorch/openenv-openspiel-base:sha-e622c7e"
+        in dockerfile_text
+    )
     assert "ENV ENABLE_WEB_INTERFACE=true" in dockerfile_text

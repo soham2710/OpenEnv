@@ -42,38 +42,11 @@ def serve(
     """
     Serve an OpenEnv environment locally.
 
-    TODO: This command is currently not implemented and has been deferred for later.
-
-    Planned functionality:
-    - Run environment server locally without Docker
-    - Support multiple deployment modes (local, notebook, cluster)
-    - Auto-reload for development
-    - Integration with environment's [project.scripts] entry point
-
-    For now, use Docker-based serving:
-        1. Build the environment: openenv build
-        2. Run the container: docker run -p 8000:8000 <image-name>
-
-    Or use uv directly:
-        uv run --project . server --port 8000
+    This command starts the environment server in the current or specified directory using uvicorn.
+    Supports host, port, and reload options for development.
     """
-    console.print("[bold yellow]⚠ This command is not yet implemented[/bold yellow]\n")
-
-    console.print(
-        "The [bold cyan]openenv serve[/bold cyan] command has been deferred for later."
-    )
-
-    console.print("[bold]Alternative approaches:[/bold]\n")
-
-    console.print("[cyan]Option 1: Docker-based serving (recommended)[/cyan]")
-    console.print("  1. Build the environment:")
-    console.print("     [dim]$ openenv build[/dim]")
-    console.print("  2. Run the Docker container:")
-    console.print(
-        f"     [dim]$ docker run -p {port}:{port} openenv-<env-name>:latest[/dim]\n"
-    )
-
-    console.print("[cyan]Option 2: Direct execution with uv[/cyan]")
+    import subprocess
+    import sys
 
     # Determine environment path
     if env_path is None:
@@ -81,14 +54,31 @@ def serve(
     else:
         env_path_obj = Path(env_path)
 
-    # Check for openenv.yaml
-    openenv_yaml = env_path_obj / "openenv.yaml"
-    if openenv_yaml.exists():
-        console.print("  From your environment directory:")
-        console.print(f"     [dim]$ cd {env_path_obj}[/dim]")
-        console.print(f"     [dim]$ uv run --project . server --port {port}[/dim]\n")
-    else:
-        console.print("  From an environment directory with pyproject.toml:")
-        console.print(f"     [dim]$ uv run --project . server --port {port}[/dim]\n")
+    # Try to find the server entry point (server/app.py)
+    server_app = env_path_obj / "server" / "app.py"
+    if not server_app.exists():
+        console.print(f"[red]Could not find server/app.py in {env_path_obj}[/red]")
+        raise typer.Exit(1)
 
-    raise typer.Exit(0)
+    # Build uvicorn command
+    uvicorn_cmd = [
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "server.app:app",
+        "--host",
+        host,
+        "--port",
+        str(port),
+    ]
+    if reload:
+        uvicorn_cmd.append("--reload")
+
+    console.print(
+        f"[green]Starting environment server with:[/green] {' '.join(uvicorn_cmd)}"
+    )
+    try:
+        subprocess.run(uvicorn_cmd, cwd=str(env_path_obj), check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Failed to start server: {e}[/red]")
+        raise typer.Exit(e.returncode)
