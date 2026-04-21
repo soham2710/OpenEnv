@@ -429,14 +429,17 @@ def validate_running_environment(
 
 def _has_main_guard_call(app_content: str) -> bool:
     """Return True when the module calls main() under a __main__ guard."""
+    import re
     try:
         tree = ast.parse(app_content)
     except SyntaxError:
-        return (
-            "__name__" in app_content
-            and "__main__" in app_content
-            and "main(" in app_content
-        )
+        # Fallback: look for if __name__ == "__main__" and any call to main
+        if "__name__" in app_content and "__main__" in app_content:
+            # Look for any call to main (main(), main(123), main(port=8000), etc.)
+            main_call_pattern = re.compile(r"main\s*\(")
+            if main_call_pattern.search(app_content):
+                return True
+        return False
 
     for node in ast.iter_child_nodes(tree):
         if not isinstance(node, ast.If):
