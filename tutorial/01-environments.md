@@ -135,6 +135,7 @@ Focus on experiments, use OpenEnvironments, and build agents that go beyond Cart
 It's just a loop:
 
 ```python
+# RL loop (core idea)
 while not done:
     observation = environment.observe()
     action = policy.choose(observation)
@@ -142,65 +143,30 @@ while not done:
     policy.learn(reward)
 ```
 
-That's it. That's RL.
+This is the essence of RL: **observe → act → reward → repeat**.
 
-Let's see it in action:
-
+*Example:*
 ```python
 import random
-
-print("🎲 " + "="*58 + " 🎲")
-print("   Number Guessing Game - The Simplest RL Example")
-print("🎲 " + "="*58 + " 🎲")
-
-# Environment setup
 target = random.randint(1, 10)
 guesses_left = 3
-
-print(f"\n🎯 I'm thinking of a number between 1 and 10...")
-print(f"💭 You have {guesses_left} guesses. Let's see how random guessing works!\n")
-
-# The RL Loop - Pure random policy (no learning!)
 while guesses_left > 0:
-    # Policy: Random guessing (no learning yet!)
     guess = random.randint(1, 10)
     guesses_left -= 1
-    
-    print(f"💭 Guess #{3-guesses_left}: {guess}", end=" → ")
-    
-    # Reward signal (but we're not using it!)
     if guess == target:
-        print("🎉 Correct! +10 points")
+        print("Correct!")
         break
     elif abs(guess - target) <= 2:
-        print("🔥 Warm! (close)")
+        print("Warm!")
     else:
-        print("❄️  Cold! (far)")
+        print("Cold!")
 else:
-    print(f"\n💔 Out of guesses. The number was {target}.")
-
-print("\n" + "="*62)
-print("💡 This is RL: Observe → Act → Reward → Repeat")
-print("   But this policy is terrible! It doesn't learn from rewards.")
-print("="*62 + "\n")
+    print(f"Out of guesses. The number was {target}.")
 ```
 
-**Output:**
+*Sample output:*
 ```
-🎲 ========================================================== 🎲
-   Number Guessing Game - The Simplest RL Example
-🎲 ========================================================== 🎲
-
-🎯 I'm thinking of a number between 1 and 10...
-💭 You have 3 guesses. Let's see how random guessing works!
-
-💭 Guess #1: 2 → ❄️  Cold! (far)
-💭 Guess #2: 10 → 🎉 Correct! +10 points
-
-==============================================================
-💡 This is RL: Observe → Act → Reward → Repeat
-   But this policy is terrible! It doesn't learn from rewards.
-==============================================================
+Correct!
 ```
 
 ---
@@ -343,94 +309,32 @@ src/envs/your_env/
 Let's explore the actual OpenEnv code to see how this works:
 
 ```python
-# Import OpenEnv's core abstractions
-from core.env_server import Environment, Action, Observation, State
-from core.http_env_client import HTTPEnvClient
-
-print("="*70)
-print("   🧩 OPENENV CORE ABSTRACTIONS")
-print("="*70)
-
-print("""
-🖥️  SERVER SIDE (runs in Docker):
-
-    class Environment(ABC):
-        '''Base class for all environment implementations'''
-        
-        @abstractmethod
-        def reset(self) -> Observation:
-            '''Start new episode'''
-        
-        @abstractmethod
-        def step(self, action: Action) -> Observation:
-            '''Execute action, return observation'''
-        
-        @property
-        def state(self) -> State:
-            '''Get episode metadata'''
-
-📱 CLIENT SIDE (your training code):
-
-    class HTTPEnvClient(ABC):
-        '''Base class for HTTP clients'''
-        
-        def reset(self) -> StepResult:
-            # HTTP POST /reset
-        
-        def step(self, action) -> StepResult:
-            # HTTP POST /step
-        
-        def state(self) -> State:
-            # HTTP GET /state
-""")
-
-print("="*70)
-print("\n✨ Same interface on both sides - communication via HTTP!")
-print("🎯 You focus on RL, OpenEnv handles the infrastructure.\n")
+from openenv.core.env_client import EnvClient
+from openenv.core.env_server.interfaces import Environment
+from openenv.core.env_server.types import Action, Observation, State
 ```
 
-**Output:**
+Server side:
+
+```python
+class YourEnvironment(Environment[Action, Observation, State]):
+    def reset(self, seed=None, episode_id=None, **kwargs) -> Observation:
+        ...
+
+    def step(self, action: Action, timeout_s=None, **kwargs) -> Observation:
+        ...
 ```
-======================================================================
-   🧩 OPENENV CORE ABSTRACTIONS
-======================================================================
 
-🖥️  SERVER SIDE (runs in Docker):
+Client side:
 
-    class Environment(ABC):
-        '''Base class for all environment implementations'''
-        
-        @abstractmethod
-        def reset(self) -> Observation:
-            '''Start new episode'''
-        
-        @abstractmethod
-        def step(self, action: Action) -> Observation:
-            '''Execute action, return observation'''
-        
-        @property
-        def state(self) -> State:
-            '''Get episode metadata'''
-
-📱 CLIENT SIDE (your training code):
-
-    class HTTPEnvClient(ABC):
-        '''Base class for HTTP clients'''
-        
-        def reset(self) -> StepResult:
-            # HTTP POST /reset
-        
-        def step(self, action) -> StepResult:
-            # HTTP POST /step
-        
-        def state(self) -> State:
-            # HTTP GET /state
-
-======================================================================
-
-✨ Same interface on both sides - communication via HTTP!
-🎯 You focus on RL, OpenEnv handles the infrastructure.
+```python
+class YourEnv(EnvClient[Action, Observation, State]):
+    ...
 ```
+
+The environment implements the game or simulation logic. The client maintains the session and exposes the same `reset()`, `step()`, and `state()` flow to your training code.
+
+Same interface on both sides, with OpenEnv handling the transport and session management for you.
 
 ---
 

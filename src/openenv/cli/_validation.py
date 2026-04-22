@@ -11,6 +11,7 @@ This module provides functions to check if environments are properly
 configured for multi-mode deployment (Docker, direct Python, notebooks, clusters).
 """
 
+import ast
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -426,6 +427,47 @@ def validate_running_environment(
     return report
 
 
+def _has_main_guard_call(app_content: str) -> bool:
+    """Return True when the module calls main() under a __main__ guard."""
+    import re
+    try:
+        tree = ast.parse(app_content)
+    except SyntaxError:
+        # Fallback: look for if __name__ == "__main__" and any call to main
+        if "__name__" in app_content and "__main__" in app_content:
+            # Look for any call to main (main(), main(123), main(port=8000), etc.)
+            main_call_pattern = re.compile(r"main\s*\(")
+            if main_call_pattern.search(app_content):
+                return True
+        return False
+
+    for node in ast.iter_child_nodes(tree):
+        if not isinstance(node, ast.If):
+            continue
+
+        test = node.test
+        if not (
+            isinstance(test, ast.Compare)
+            and isinstance(test.left, ast.Name)
+            and test.left.id == "__name__"
+            and len(test.ops) == 1
+            and isinstance(test.ops[0], ast.Eq)
+            and len(test.comparators) == 1
+            and isinstance(test.comparators[0], ast.Constant)
+            and test.comparators[0].value == "__main__"
+        ):
+            continue
+
+        for guarded_node in node.body:
+            for candidate in ast.walk(guarded_node):
+                if isinstance(candidate, ast.Call):
+                    func = candidate.func
+                    if isinstance(func, ast.Name) and func.id == "main":
+                        return True
+
+    return False
+
+
 def validate_multi_mode_deployment(env_path: Path) -> tuple[bool, list[str]]:
     """
     Validate that an environment is ready for multi-mode deployment.
@@ -496,7 +538,7 @@ def validate_multi_mode_deployment(env_path: Path) -> tuple[bool, list[str]]:
             issues.append("server/app.py missing main() function")
 
         # Check if main() is callable
-        if "__name__" not in app_content or "main()" not in app_content:
+        if not _has_main_guard_call(app_content):
             issues.append(
                 "server/app.py main() function not callable (missing if __name__ == '__main__')"
             )

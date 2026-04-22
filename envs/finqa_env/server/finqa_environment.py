@@ -244,7 +244,7 @@ class FinQAEnvironment(MCPEnvironment):
         # Let the base class handle MCP actions
         obs = super().step(action, timeout_s=timeout_s, **kwargs)
 
-        # Check if submit_answer was called
+            print("[FinQAEnvironment] step() called with action:", action)
         if isinstance(action, CallToolAction) and action.tool_name == "submit_answer":
             submitted_answer = action.arguments.get("answer", "")
             reward = compute_reward(submitted_answer, self._state.ground_truth)

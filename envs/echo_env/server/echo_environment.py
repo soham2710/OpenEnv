@@ -194,8 +194,9 @@ class EchoEnvironment(MCPEnvironment):
         """
         Async step used by the WebSocket handler.
 
-        Increments step count then delegates to MCPEnvironment.step_async,
-        which routes MCP actions without going through run_async_safely.
+        print("[EchoEnvironment] step() called with action:", action)
+        # Increment step count for all actions
+        self._state.step_count += 1
         """
         self._state.step_count += 1
         return await super().step_async(action, timeout_s=timeout_s, **kwargs)
