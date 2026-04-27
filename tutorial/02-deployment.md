@@ -205,35 +205,35 @@ openenv build -t openenv-benchmark:latest
 docker build -t openenv-benchmark:latest -f server/Dockerfile .
 ```
 
-### Run Container
-
-```bash
-# Basic run
-docker run -d -p 8000:8000 my-env:latest
-
-# With environment variables
-docker run -d -p 8000:8000 \
-    -e WORKERS=4 \
-    -e MAX_CONCURRENT_ENVS=100 \
-    my-env:latest
-
-# Named container for easy management
-docker run -d --name my-env -p 8000:8000 my-env:latest
+# Run locally
+docker run -it -p 7860:7860 --platform=linux/amd64 \
+    registry.hf.space/openenv-echo-env:latest
 ```
 
-### Connect from Python
+Now connect to your local instance (note the port 7860):
 
 ```python
 import asyncio
 from echo_env import EchoEnv, EchoAction
 
+# Async (recommended)
 async def main():
-    # Async usage (recommended)
-    async with EchoEnv(base_url="http://localhost:8000") as client:
-        result = await client.reset()
-        result = await client.step(EchoAction(message="Hello"))
+    async with EchoEnv(base_url="http://localhost:7860") as env:
+        result = await env.reset()
+        print(result.observation)
+        result = await env.step(EchoAction(message="Hello"))
         print(result.observation)
 
+asyncio.run(main())
+```
+
+# Sync (using .sync() wrapper)
+with EchoEnv(base_url="http://localhost:7860").sync() as env:
+    result = env.reset()
+    print(result.observation)
+    result = env.step(EchoAction(message="Hello"))
+    print(result.observation)
+```
     # From Docker image
     client = await EchoEnv.from_docker_image("<local_docker_image>")
     async with client:

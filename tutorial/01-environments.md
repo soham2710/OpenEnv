@@ -53,59 +53,30 @@ Focus on experiments, use OpenEnvironments, and build agents that go beyond Cart
 
 **🎯 Part 1-2: The Fundamentals**
 
-- ⚡ RL in 60 seconds
-- 🤔 Why existing solutions fall short
-- 💡 The OpenEnv solution
+```python
+import random
 
-</td>
-<td width="50%">
+# Number Guessing Game - The Simplest RL Example
+target = random.randint(1, 10)
+guesses_left = 3
+print(f"I'm thinking of a number between 1 and 10...")
+print(f"You have {guesses_left} guesses. Let's see how random guessing works!\n")
+while guesses_left > 0:
+    guess = random.randint(1, 10)
+    guesses_left -= 1
+    print(f"Guess #{3-guesses_left}: {guess}", end=" → ")
+    if guess == target:
+        print("Correct! +10 points")
+        break
+    elif abs(guess - target) <= 2:
+        print("Warm! (close)")
+    else:
+        print("Cold! (far)")
+else:
+    print(f"Out of guesses. The number was {target}.")
+```
 
-**🏗️ Part 3-5: The Architecture**
-
-- 🔧 How OpenEnv works
-- 🔍 Exploring real code
-- 🎮 OpenSpiel integration example
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**🎮 Part 6-8: Hands-On Demo**
-
-- 🔌 Use existing OpenSpiel environment
-- 🤖 Test 4 different policies
-- 👀 Watch learning happen live
-
-</td>
-<td width="50%">
-
-**🔧 Part 9-10: Going Further**
-
-- 🎮 Switch to other OpenSpiel games
-- ✨ Build your own integration
-- 🌐 Deploy to production
-
-</td>
-</tr>
-</table>
-
-!!! tip "Pro Tip"
-    This notebook is designed to run top-to-bottom in Google Colab with zero setup!
-    
-    ⏱️ **Time**: ~5 minutes | 📊 **Difficulty**: Beginner-friendly | 🎯 **Outcome**: Production-ready RL knowledge
-
----
-
-## 📑 Table of Contents
-
-### Foundation
-
-- [Part 1: RL in 60 Seconds ⏱️](#part-1-rl-in-60-seconds)
-- [Part 2: The Problem with Traditional RL 😤](#part-2-the-problem-with-traditional-rl)
-- [Part 3: Setup 🛠️](#part-3-setup)
-
-### Architecture
+*Sample output will vary each run, but you should see the guessing process and result printed above.*
 
 - [Part 4: The OpenEnv Pattern 🏗️](#part-4-the-openenv-pattern)
 - [Part 5: Example Integration - OpenSpiel 🎮](#part-5-example-integration---openspiel)
