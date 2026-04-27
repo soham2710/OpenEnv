@@ -33,7 +33,12 @@ try:
     from ..models import CodeBlockResult, REPLAction, REPLObservation, REPLState
 except ImportError:
     try:
-        from repl_env.models import CodeBlockResult, REPLAction, REPLObservation, REPLState
+        from repl_env.models import (
+            CodeBlockResult,
+            REPLAction,
+            REPLObservation,
+            REPLState,
+        )
     except ImportError:
         from models import CodeBlockResult, REPLAction, REPLObservation, REPLState
 
